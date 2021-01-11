@@ -1,13 +1,13 @@
 import re
 import json
 
-from typing import List, Optional
+from typing import List, Optional, Union
 from fractions import Fraction
 
 re_bar = re.compile(r"^#(?P<number>[0-9]{3})(?P<order>[0-9]{2}):(?P<value>[0-9A-Z]+)")
 re_wav = re.compile(r"^#WAV(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
 re_bpm = re.compile(r"^#BPM(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
-
+re_stop = re.compile(r"^#STOP(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
 
 class ExBPMDef():
     def __init__(self):
@@ -19,6 +19,11 @@ class WavDef():
         self.order = int()
         self.wav = str()
 
+class StopDef():
+    def __init__(self):
+        self.order = int()
+        self.value = int()
+
 class Note():
     def __init__(self):
         self.timing = Fraction()
@@ -28,6 +33,11 @@ class BpmNote():
     def __init__(self):
         self.timing = Fraction()
         self.bpm    = float()
+
+class StopNote():
+    def __init__(self):
+        self.timing = Fraction()
+        self.duration = Fraction()
 
 class BarInfo():
     def __init__(self):
@@ -41,7 +51,8 @@ class BarInfo():
         self.notes_seven   = list() # List[Note]
         self.notes_scratch = list() # List[Note]
         self.background    = list() # List[Note]
-        self.bpm           = list() # List[Note]
+        self.bpm           = list() # List[BpmNote]
+        self.stops         = list() # List[StopNote]
         self.beat          = Fraction()
 
 class BMS():
@@ -90,8 +101,11 @@ class BMS():
         self.genre = str()
         self.bpm = float()
 
+        # def
         self.exbpm = list() # List[ExBPMDef]
         self.wav = list() # List[WavDef]
+        self.stop = list() # List[StopDef]
+
         self.bars = list() # List[BarInfo]
 
         self.__parse(lines)
@@ -168,18 +182,23 @@ class BMS():
             result.append(new_bpm)
         return result
 
-    def __merge_notes(self, src: List[Note], dst: List[Note]) -> List[Note]:
-        for s in src:
-            found = False
-            for d in dst:
-                if d.timing == s.timing:
-                    found = True
-                    break
-            if not found:
-                dst.append(s)
-        return dst
+    def __parse_stop(self, data: str) -> Optional[List[StopNote]]:
+        if not data:
+            return None
+        assert len(data) % 2 == 0
+        result = list() # List[StopNote]
+        length = int(len(data) / 2)
+        for i in range(length):
+            s = data[2*i:2*(i+1)]
+            if s == '00':
+                continue
+            new_stop = StopNote()
+            new_stop.duration = Fraction(next(filter(lambda x: x.order == int(s, 36), self.stop)).value, 192)
+            result.append(new_stop)
+        return result
 
-    def __merge_bpms(self, src: List[BpmNote], dst: List[BpmNote]) -> List[BpmNote]:
+    def __merge_item(self, src: List[Union[Note, BpmNote, StopNote]], dst: List[Union[Note, BpmNote, StopNote]]) \
+        -> List[Union[Note, BpmNote, StopNote]]:
         for s in src:
             found = False
             for d in dst:
@@ -226,6 +245,13 @@ class BMS():
                 self.wav.append(new_wav)
                 continue
 
+            m = re_stop.match(l)
+            if m is not None:
+                new_stop = StopDef()
+                new_stop.order = int(m.group('order'), 36)
+                new_stop.value = int(m.group('value'))
+                continue
+
             m = re_bar.match(l)
             if m is not None:
                 bar = self.__get_barinfo(int(m.group('number')))
@@ -235,52 +261,57 @@ class BMS():
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_one = self.__merge_notes(value, bar.notes_one)
+                    bar.notes_one = self.__merge_item(value, bar.notes_one)
                 elif order == '12':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_two = self.__merge_notes(value, bar.notes_two)
+                    bar.notes_two = self.__merge_item(value, bar.notes_two)
                 elif order == '13':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_three = self.__merge_notes(value, bar.notes_three)
+                    bar.notes_three = self.__merge_item(value, bar.notes_three)
                 elif order == '14':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_four = self.__merge_notes(value, bar.notes_four)
+                    bar.notes_four = self.__merge_item(value, bar.notes_four)
                 elif order == '15':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_fice = self.__merge_notes(value, bar.notes_five)
+                    bar.notes_fice = self.__merge_item(value, bar.notes_five)
                 elif order == '16':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_scratch = self.__merge_notes(value, bar.notes_scratch)
+                    bar.notes_scratch = self.__merge_item(value, bar.notes_scratch)
                 elif order == '18':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_six = self.__merge_notes(value, bar.notes_six)
+                    bar.notes_six = self.__merge_item(value, bar.notes_six)
                 elif order == '19':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_seven = self.__merge_notes(value, bar.notes_seven)
+                    bar.notes_seven = self.__merge_item(value, bar.notes_seven)
                 elif order == '03':
                     value = self.__parse_bpm(m.group('value'))
                     if value is None:
                         continue
-                    bar.bpm = self.__merge_bpms(value, bar.bpm)
+                    bar.bpm = self.__merge_item(value, bar.bpm)
                 elif order == '08':
                     value = self.__parse_exbpm(m.group('value'))
                     if value is None:
                         continue
-                    bar.bpm = self.__merge_bpms(value, bar.bpm)
+                    bar.bpm = self.__merge_item(value, bar.bpm)
+                elif order == '09':
+                    value = self.__parse_stop(m.group('value'))
+                    if value is None:
+                        continue
+                    bar.stops = self.__merge_item(value, bar.stops)
                 elif order == '02':
                     # beat
                     bar.beat = Fraction(float(m.group('value')))
