@@ -63,23 +63,28 @@ class BMS():
                 return { 'order': obj.order, 'bpm': obj.bpm }
             elif isinstance(obj, WavDef):
                 return { 'order': obj.order, 'wav': obj.wav }
+            elif isinstance(obj, StopDef):
+                return { 'order': obj.order, 'value': obj.value }
             elif isinstance(obj, Note):
                 return { 'timing': str(obj.timing), 'defwav': obj.defwav }
             elif isinstance(obj, BpmNote):
                 return { 'timing': str(obj.timing), 'bpm': obj.bpm }
+            elif isinstance(obj, StopNote):
+                return { 'timing': str(obj.timing), 'duration': str(obj.duration) }
             elif isinstance(obj, BarInfo):
                 return {
                     'number': obj.number,
                     'backgroud': obj.background,
                     'bpm': obj.bpm,
                     'beat': str(obj.beat),
+                    'stop': obj.stops,
                     'notes_one': obj.notes_one,
                     'notes_two': obj.notes_two,
                     'notes_three': obj.notes_three,
                     'notes_four': obj.notes_four,
                     'notes_five': obj.notes_five,
                     'notes_six': obj.notes_six,
-                    'notes_seve': obj.notes_seven,
+                    'notes_seven': obj.notes_seven,
                     'notes_scratch': obj.notes_scratch
                 }
             elif isinstance(obj, BMS):
@@ -89,6 +94,7 @@ class BMS():
                     'bpm': obj.bpm,
                     'exbpm': obj.exbpm,
                     'wav': obj.wav,
+                    'stop': obj.stop,
                     'bars': obj.bars
                 }
             return super(BMS.BMSDataJSONEncoder, self).default(obj)
