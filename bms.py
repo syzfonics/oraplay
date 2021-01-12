@@ -55,6 +55,19 @@ class BarInfo():
         self.stops         = list() # List[StopNote]
         self.beat          = Fraction()
 
+    def sort(self):
+        sortkey = lambda x: x.timing
+        self.notes_one.sort(key=sortkey)
+        self.notes_two.sort(key=sortkey)
+        self.notes_three.sort(key=sortkey)
+        self.notes_four.sort(key=sortkey)
+        self.notes_five.sort(key=sortkey)
+        self.notes_six.sort(key=sortkey)
+        self.notes_seven.sort(key=sortkey)
+        self.notes_scratch.sort(key=sortkey)
+        self.bpm.sort(key=sortkey)
+        self.stops.sort(key=sortkey)
+
 class BMS():
 
     class BMSDataJSONEncoder(json.JSONEncoder):
@@ -323,6 +336,9 @@ class BMS():
                     bar.beat = Fraction(float(m.group('value')))
 
                 self.__set_barinfo(bar)
+
+        for b in self.bars:
+            b.sort()
 
     def output_json(self, path):
         with open(path, mode='wt') as fp:
