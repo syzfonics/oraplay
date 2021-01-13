@@ -228,6 +228,10 @@ class BMS():
                 dst.append(s)
         return dst
 
+    def __marge_all_item(self, src: List[Note], dst: List[Note]) -> List[Note]:
+        dst.extend(src)
+        return dst
+
     def __parse(self, lines: List[str]):
         for line in lines:
             l = line.rstrip()
@@ -316,6 +320,11 @@ class BMS():
                     if value is None:
                         continue
                     bar.notes_seven = self.__merge_item(value, bar.notes_seven)
+                elif order == '01':
+                    value = self.__marge_all_item(m.group('value'))
+                    if value is None:
+                        continue
+                    bar.background = self.__merge_item(value, bar.background)
                 elif order == '03':
                     value = self.__parse_bpm(m.group('value'))
                     if value is None:
