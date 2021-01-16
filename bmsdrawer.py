@@ -1,7 +1,8 @@
 from PIL import Image, ImageDraw
 from enum import Enum, auto
 from abc import ABCMeta, abstractmethod
-from typing import List
+from typing import List, Tuple
+from copy import copy
 
 import bms
 from oraplayexceptions import UnsupportedType
@@ -36,7 +37,7 @@ class Canvas():
         pass
 
 class BarImage():
-    def __init__(self, mode: KeyMode, keysize: KeySize=ModeSevenKeySize(), height: int=400, line_width: int=1):
+    def __init__(self, mode: KeyMode, keysize: KeySize=ModeSevenKeySize(), height: int=200, line_width: int=1):
         self.mode = mode
         if self.mode is not KeyMode.mode7key:
             raise UnsupportedType("7key mode only available")
@@ -58,6 +59,7 @@ class BarImage():
             cursor += self.line_width
             cursor += self.keysize.get_widths()[i]
         drawer.line((cursor, 0, cursor, image_height- 1), fill=(128, 128, 128), width=self.line_width)
+        drawer.line((0, image_height - 1, image_width - 1, image_height - 1), fill=(128, 128, 128), width=self.line_width)
 
         def __draw_notes(note, order, x, color):
             x_end = x + self.keysize.get_widths()[order] - 1
@@ -103,6 +105,153 @@ class BarImage():
             __draw_notes(seven, 7, cursor, (255, 255, 255))
 
         return image
+
+class Canvas():
+    def __init__(self, width: int, height: int, barlist: List[List[bms.BarInfo]]):
+        self.width = width
+        self.height = height
+        self.barlist = barlist
+
+class BMSImage():
+    def __init__(self, bms: bms.BMS, keymode: KeyMode=KeyMode.mode7key, keysize: KeySize=ModeSevenKeySize(),
+        line_width: int=1, bar_height: int=200, canvas_height: int=1000, width_offset: int=20, height_offset: int=50):
+        self.bms = bms
+        self.image = None
+        self.keymode = keymode
+        self.keysize = keysize
+        self.line_width = line_width
+        self.info_width = 30
+        self.bar_height = bar_height
+        self.canvas = None
+        self.canvas_height = canvas_height
+        self.width_offset = width_offset
+        self.height_offset = height_offset
+
+    def __bar_width(self) -> int:
+        return sum(self.keysize.get_widths()) + self.info_width + self.line_width * 10
+
+    def __calc_size_of_bar(self, bar: bms.BarInfo) -> Tuple:
+        width = self.__bar_width()
+        height = int(self.bar_height * bar.beat)
+        return (width, height)
+
+    def __calc_info_of_canvas(self) -> None:
+        cursor = [ self.width_offset, self.canvas_height - self.height_offset - 1 ]
+        oneline_barlist = list()
+        barlist = list()
+        for bar in self.bms.bars:
+            size_of_bar = self.__calc_size_of_bar(bar)
+            if (cursor[1] - size_of_bar[1]) < self.height_offset:
+                cursor[0] += size_of_bar[0]
+                cursor[0] += self.width_offset
+                cursor[1] = self.canvas_height - self.height_offset - 1
+                oneline_barlist.append(barlist)
+                barlist = list()
+            cursor[1] -= size_of_bar[1]
+            barlist.append(bar)
+        cursor[0] += self.__bar_width()
+        cursor[0] += self.width_offset
+        oneline_barlist.append(barlist)
+        self.canvas = Canvas(cursor[0], self.canvas_height, oneline_barlist)
+
+    def __draw_bar_background(self):
+        dr = ImageDraw.Draw(self.image)
+        cursor = [ self.width_offset, self.canvas.height - self.height_offset - 1 ]
+        for line in self.canvas.barlist:
+            for b in line:
+                bar_width = self.__bar_width()
+                bar_height = int(self.bar_height * b.beat)
+
+                # 黒の描画
+                # 左下から右上へ描画
+                dr.rectangle((cursor[0], cursor[1], cursor[0] + bar_width - 1, cursor[1] - bar_height + 1), fill=(0, 0, 0))
+
+                # 線の描画
+                # info line
+                line_cursor = [ cursor[0], cursor[1] - bar_height + 1 ]
+                dr.line((line_cursor[0], line_cursor[1], line_cursor[0], line_cursor[1] + bar_height - 1), \
+                    fill=(128, 128, 128), width=self.line_width)
+                line_cursor[0] += self.line_width
+                line_cursor[0] += self.info_width
+
+                # key line
+                for i in range(len(self.keysize.get_widths())):
+                    dr.line((line_cursor[0], line_cursor[1], line_cursor[0], line_cursor[1] + bar_height - 1), \
+                        fill=(128, 128, 128), width=self.line_width)
+                    line_cursor[0] += self.line_width
+                    line_cursor[0] += self.keysize.get_widths()[i]
+                dr.line((line_cursor[0], line_cursor[1], line_cursor[0], line_cursor[1] + bar_height- 1), \
+                    fill=(128, 128, 128), width=self.line_width)
+                dr.line((cursor[0], cursor[1], cursor[0] + bar_width - 1, cursor[1]), fill=(128, 128, 128), width=self.line_width)
+                cursor[1] -= bar_height
+            cursor[0] += self.__bar_width()
+            cursor[0] += self.width_offset
+            cursor[1] = self.canvas.height - self.height_offset - 1
+
+    def __draw_notes(self):
+        dr = ImageDraw.Draw(self.image)
+        cursor = [ self.width_offset, self.canvas.height - self.height_offset - 1 ]
+        for line in self.canvas.barlist:
+            for b in line:
+                bar_height = int(self.bar_height * b.beat)
+                note_cursor = copy(cursor)
+                note_cursor[1] -= (bar_height - 1)
+
+                def __draw_notes(note: bms.Note, order: int, pos: Tuple[int, int], color: Tuple) -> None:
+                    x_start = pos[0]
+                    x_end = x_start + self.keysize.get_widths()[order] - 1
+                    y_start = pos[1] + int((1 - note.timing) * bar_height) - self.keysize.get_height() - 1
+                    y_end = y_start + self.keysize.get_height()
+                    dr.rectangle((x_start, y_start, x_end, y_end), fill=color)
+
+                def __move_cursor(cr, order):
+                    cr += self.keysize.get_widths()[order]
+                    cr += self.line_width
+                    return cr
+
+                note_cursor[0] += self.line_width * 2
+                note_cursor[0] += self.info_width
+                for scratch in b.notes_scratch:
+                    __draw_notes(scratch, 0, note_cursor, (255, 0, 0))
+
+                note_cursor[0] = __move_cursor(note_cursor[0], 0)
+                for one in b.notes_one:
+                    __draw_notes(one, 1, note_cursor, (255, 255, 255))
+
+                note_cursor[0] = __move_cursor(note_cursor[0], 1)
+                for two in b.notes_two:
+                    __draw_notes(two, 2, note_cursor, (0, 0, 255))
+
+                note_cursor[0] = __move_cursor(note_cursor[0], 2)
+                for three in b.notes_three:
+                    __draw_notes(three, 3, note_cursor, (255, 255, 255))
+
+                note_cursor[0] = __move_cursor(note_cursor[0], 3)
+                for four in b.notes_four:
+                    __draw_notes(four, 4, note_cursor, (0, 0, 255))
+
+                note_cursor[0] = __move_cursor(note_cursor[0], 4)
+                for five in b.notes_five:
+                    __draw_notes(five, 5, note_cursor, (255, 255, 255))
+
+                note_cursor[0] = __move_cursor(note_cursor[0], 5)
+                for six in b.notes_six:
+                    __draw_notes(six, 6, note_cursor, (0, 0, 255))
+
+                note_cursor[0] = __move_cursor(note_cursor[0], 6)
+                for seven in b.notes_seven:
+                    __draw_notes(seven, 7, note_cursor, (255, 255, 255))
+
+                cursor[1] -= bar_height
+            cursor[0] += self.__bar_width()
+            cursor[0] += self.width_offset
+            cursor[1] = self.canvas.height - self.height_offset - 1
+
+    def draw(self):
+        self.__calc_info_of_canvas()
+        self.image = Image.new("RGB", (self.canvas.width, self.canvas.height), (200, 200,200))
+        self.__draw_bar_background()
+        self.__draw_notes()
 
 class BMSDrawer():
     def __init__(self, bms: bms.BMS):
