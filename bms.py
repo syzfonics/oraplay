@@ -4,7 +4,7 @@ import json
 from typing import List, Optional, Union
 from fractions import Fraction
 
-re_bar = re.compile(r"^#(?P<number>[0-9]{3})(?P<order>[0-9]{2}):(?P<value>[0-9A-Z]+)")
+re_bar = re.compile(r"^#(?P<number>[0-9]{3})(?P<order>[0-9]{2}):(?P<value>(([0-9A-Z]{2})+)|([0-9]+\.[0-9]+))")
 re_wav = re.compile(r"^#WAV(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
 re_bpm = re.compile(r"^#BPM(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
 re_stop = re.compile(r"^#STOP(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
@@ -228,7 +228,7 @@ class BMS():
                 dst.append(s)
         return dst
 
-    def __marge_all_item(self, src: List[Note], dst: List[Note]) -> List[Note]:
+    def __merge_all_item(self, src: List[Note], dst: List[Note]) -> List[Note]:
         dst.extend(src)
         return dst
 
@@ -321,10 +321,10 @@ class BMS():
                         continue
                     bar.notes_seven = self.__merge_item(value, bar.notes_seven)
                 elif order == '01':
-                    value = self.__marge_all_item(m.group('value'))
+                    value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.background = self.__merge_item(value, bar.background)
+                    bar.background = self.__merge_all_item(value, bar.background)
                 elif order == '03':
                     value = self.__parse_bpm(m.group('value'))
                     if value is None:
