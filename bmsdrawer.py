@@ -207,7 +207,7 @@ class BMSImage():
 
                 # draw notes
 
-                def __draw_notes(note: bms.Note, order: int, pos: Tuple[int, int], color: Tuple) -> None:
+                def __draw_note(note: bms.Note, order: int, pos: Tuple[int, int], color: Tuple) -> None:
                     x_start = pos[0]
                     x_end = x_start + self.keysize.get_widths()[order] - 1
                     y_start = pos[1] + int((1 - note.timing) * bar_height) - self.keysize.get_height() - 1
@@ -222,35 +222,35 @@ class BMSImage():
                 note_cursor[0] += self.line_width * 2
                 note_cursor[0] += self.info_width
                 for scratch in b.notes_scratch:
-                    __draw_notes(scratch, 0, note_cursor, (255, 0, 0))
+                    __draw_note(scratch, 0, note_cursor, (255, 0, 0))
 
                 note_cursor[0] = __move_cursor(note_cursor[0], 0)
                 for one in b.notes_one:
-                    __draw_notes(one, 1, note_cursor, (255, 255, 255))
+                    __draw_note(one, 1, note_cursor, (255, 255, 255))
 
                 note_cursor[0] = __move_cursor(note_cursor[0], 1)
                 for two in b.notes_two:
-                    __draw_notes(two, 2, note_cursor, (0, 0, 255))
+                    __draw_note(two, 2, note_cursor, (0, 0, 255))
 
                 note_cursor[0] = __move_cursor(note_cursor[0], 2)
                 for three in b.notes_three:
-                    __draw_notes(three, 3, note_cursor, (255, 255, 255))
+                    __draw_note(three, 3, note_cursor, (255, 255, 255))
 
                 note_cursor[0] = __move_cursor(note_cursor[0], 3)
                 for four in b.notes_four:
-                    __draw_notes(four, 4, note_cursor, (0, 0, 255))
+                    __draw_note(four, 4, note_cursor, (0, 0, 255))
 
                 note_cursor[0] = __move_cursor(note_cursor[0], 4)
                 for five in b.notes_five:
-                    __draw_notes(five, 5, note_cursor, (255, 255, 255))
+                    __draw_note(five, 5, note_cursor, (255, 255, 255))
 
                 note_cursor[0] = __move_cursor(note_cursor[0], 5)
                 for six in b.notes_six:
-                    __draw_notes(six, 6, note_cursor, (0, 0, 255))
+                    __draw_note(six, 6, note_cursor, (0, 0, 255))
 
                 note_cursor[0] = __move_cursor(note_cursor[0], 6)
                 for seven in b.notes_seven:
-                    __draw_notes(seven, 7, note_cursor, (255, 255, 255))
+                    __draw_note(seven, 7, note_cursor, (255, 255, 255))
 
                 cursor[1] -= bar_height
             cursor[0] += self.__bar_width()
