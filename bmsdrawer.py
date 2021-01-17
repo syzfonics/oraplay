@@ -77,36 +77,14 @@ class BarImage():
             return cr
 
         cursor = self.line_width
-        for scratch in data.notes_scratch:
+        for scratch in data.notes[0]:
             __draw_notes(scratch, 0, cursor, (255, 0, 0))
 
-        cursor = __move_cursor(cursor, 0)
-        for one in data.notes_one:
-            __draw_notes(one, 1, cursor, (255, 255, 255))
-
-        cursor = __move_cursor(cursor, 1)
-        for two in data.notes_two:
-            __draw_notes(two, 2, cursor, (0, 0, 255))
-
-        cursor = __move_cursor(cursor, 2)
-        for three in data.notes_three:
-            __draw_notes(three, 3, cursor, (255, 255, 255))
-
-        cursor = __move_cursor(cursor, 3)
-        for four in data.notes_four:
-            __draw_notes(four, 4, cursor, (0, 0, 255))
-
-        cursor = __move_cursor(cursor, 4)
-        for five in data.notes_five:
-            __draw_notes(five, 5, cursor, (255, 255, 255))
-
-        cursor = __move_cursor(cursor, 5)
-        for six in data.notes_six:
-            __draw_notes(six, 6, cursor, (0, 0, 255))
-
-        cursor = __move_cursor(cursor, 6)
-        for seven in data.notes_seven:
-            __draw_notes(seven, 7, cursor, (255, 255, 255))
+        color = ( COLOR_WHITE, COLOR_BLUE, COLOR_WHITE, COLOR_BLUE, COLOR_WHITE, COLOR_BLUE, COLOR_WHITE )
+        for i in range(7):
+            cursor = __move_cursor(cursor, i)
+            for j in data.notes[i + 1]:
+                __draw_notes(j, i + 1, cursor, color[i])
 
         return image
 
@@ -225,28 +203,13 @@ class BMSImage():
 
                 note_cursor[0] += self.line_width * 2
                 note_cursor[0] += self.info_width
-                for scratch in b.notes_scratch:
+                for scratch in b.notes[0]:
                     __draw_note(scratch, 0, note_cursor, COLOR_RED)
 
                 color_index = [ COLOR_WHITE, COLOR_BLUE, COLOR_WHITE, COLOR_BLUE, COLOR_WHITE, COLOR_BLUE, COLOR_WHITE ]
                 for i, m in enumerate(modify):
-                    t = None
-                    if m == 0:
-                        t = b.notes_one
-                    elif m == 1:
-                        t = b.notes_two
-                    elif m == 2:
-                        t = b.notes_three
-                    elif m == 3:
-                        t = b.notes_four
-                    elif m == 4:
-                        t = b.notes_five
-                    elif m == 5:
-                        t = b.notes_six
-                    elif m == 6:
-                        t = b.notes_seven
                     note_cursor[0] = __move_cursor(note_cursor[0], i)
-                    for n in t:
+                    for n in b.notes[m + 1]:
                         __draw_note(n, i + 1, note_cursor, color_index[i])
 
                 cursor[1] -= bar_height

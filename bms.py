@@ -42,14 +42,7 @@ class StopNote():
 class BarInfo():
     def __init__(self):
         self.number        = int()
-        self.notes_one     = list() # List[Note]
-        self.notes_two     = list() # List[Note]
-        self.notes_three   = list() # List[Note]
-        self.notes_four    = list() # List[Note]
-        self.notes_five    = list() # List[Note]
-        self.notes_six     = list() # List[Note]
-        self.notes_seven   = list() # List[Note]
-        self.notes_scratch = list() # List[Note]
+        self.notes         = ( list(), list(), list(), list(), list(), list(), list(), list() )
         self.background    = list() # List[Note]
         self.bpm           = list() # List[BpmNote]
         self.stops         = list() # List[StopNote]
@@ -57,14 +50,14 @@ class BarInfo():
 
     def sort(self):
         sortkey = lambda x: x.timing
-        self.notes_one.sort(key=sortkey)
-        self.notes_two.sort(key=sortkey)
-        self.notes_three.sort(key=sortkey)
-        self.notes_four.sort(key=sortkey)
-        self.notes_five.sort(key=sortkey)
-        self.notes_six.sort(key=sortkey)
-        self.notes_seven.sort(key=sortkey)
-        self.notes_scratch.sort(key=sortkey)
+        self.notes[0].sort(key=sortkey)
+        self.notes[1].sort(key=sortkey)
+        self.notes[2].sort(key=sortkey)
+        self.notes[3].sort(key=sortkey)
+        self.notes[4].sort(key=sortkey)
+        self.notes[5].sort(key=sortkey)
+        self.notes[6].sort(key=sortkey)
+        self.notes[7].sort(key=sortkey)
         self.bpm.sort(key=sortkey)
         self.stops.sort(key=sortkey)
 
@@ -91,14 +84,14 @@ class BMS():
                     'bpm': obj.bpm,
                     'beat': str(obj.beat),
                     'stop': obj.stops,
-                    'notes_one': obj.notes_one,
-                    'notes_two': obj.notes_two,
-                    'notes_three': obj.notes_three,
-                    'notes_four': obj.notes_four,
-                    'notes_five': obj.notes_five,
-                    'notes_six': obj.notes_six,
-                    'notes_seven': obj.notes_seven,
-                    'notes_scratch': obj.notes_scratch
+                    'notes_scratch': obj.notes[0],
+                    'notes_one'    : obj.notes[1],
+                    'notes_two'    : obj.notes[2],
+                    'notes_three'  : obj.notes[3],
+                    'notes_four'   : obj.notes[4],
+                    'notes_five'   : obj.notes[5],
+                    'notes_six'    : obj.notes[6],
+                    'notes_seven'  : obj.notes[7]
                 }
             elif isinstance(obj, BMS):
                 return {
@@ -216,8 +209,7 @@ class BMS():
             result.append(new_stop)
         return result
 
-    def __merge_item(self, src: List[Union[Note, BpmNote, StopNote]], dst: List[Union[Note, BpmNote, StopNote]]) \
-        -> List[Union[Note, BpmNote, StopNote]]:
+    def __merge_item(self, src: List[Union[Note, BpmNote, StopNote]], dst: List[Union[Note, BpmNote, StopNote]]):
         for s in src:
             found = False
             for d in dst:
@@ -226,11 +218,9 @@ class BMS():
                     break
             if not found:
                 dst.append(s)
-        return dst
 
-    def __merge_all_item(self, src: List[Note], dst: List[Note]) -> List[Note]:
+    def __merge_all_item(self, src: List[Note], dst: List[Note]):
         dst.extend(src)
-        return dst
 
     def __parse(self, lines: List[str]):
         for line in lines:
@@ -284,62 +274,62 @@ class BMS():
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_one = self.__merge_item(value, bar.notes_one)
+                    self.__merge_item(value, bar.notes[1])
                 elif order == '12':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_two = self.__merge_item(value, bar.notes_two)
+                    self.__merge_item(value, bar.notes[2])
                 elif order == '13':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_three = self.__merge_item(value, bar.notes_three)
+                    self.__merge_item(value, bar.notes[3])
                 elif order == '14':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_four = self.__merge_item(value, bar.notes_four)
+                    self.__merge_item(value, bar.notes[4])
                 elif order == '15':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_fice = self.__merge_item(value, bar.notes_five)
+                    self.__merge_item(value, bar.notes[5])
                 elif order == '16':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_scratch = self.__merge_item(value, bar.notes_scratch)
+                    self.__merge_item(value, bar.notes[0])
                 elif order == '18':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_six = self.__merge_item(value, bar.notes_six)
+                    self.__merge_item(value, bar.notes[6])
                 elif order == '19':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.notes_seven = self.__merge_item(value, bar.notes_seven)
+                    self.__merge_item(value, bar.notes[7])
                 elif order == '01':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    bar.background = self.__merge_all_item(value, bar.background)
+                    self.__merge_all_item(value, bar.background)
                 elif order == '03':
                     value = self.__parse_bpm(m.group('value'))
                     if value is None:
                         continue
-                    bar.bpm = self.__merge_item(value, bar.bpm)
+                    self.__merge_item(value, bar.bpm)
                 elif order == '08':
                     value = self.__parse_exbpm(m.group('value'))
                     if value is None:
                         continue
-                    bar.bpm = self.__merge_item(value, bar.bpm)
+                    self.__merge_item(value, bar.bpm)
                 elif order == '09':
                     value = self.__parse_stop(m.group('value'))
                     if value is None:
                         continue
-                    bar.stops = self.__merge_item(value, bar.stops)
+                    self.__merge_item(value, bar.stops)
                 elif order == '02':
                     # beat
                     bar.beat = Fraction(float(m.group('value')))
