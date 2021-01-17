@@ -197,6 +197,16 @@ class BMSImage():
                 note_cursor = copy(cursor)
                 note_cursor[1] -= (bar_height - 1)
 
+                # draw bpm notes
+
+                for bpm in b.bpm:
+                    y_bpm = note_cursor[1] + int((1 - bpm.timing) * bar_height) - 1
+                    dr.line((note_cursor[0], y_bpm, note_cursor[0] + self.__bar_width() - 2 * self.line_width - 1, y_bpm), \
+                        fill=(0, 255, 0), width=self.line_width*2)
+                    dr.text((note_cursor[0] + 2, y_bpm - 11), text=str(bpm.bpm), anchor='rs', fill=(0, 255, 0))
+
+                # draw notes
+
                 def __draw_notes(note: bms.Note, order: int, pos: Tuple[int, int], color: Tuple) -> None:
                     x_start = pos[0]
                     x_end = x_start + self.keysize.get_widths()[order] - 1
