@@ -7,6 +7,10 @@ from copy import copy
 import bms
 from oraplayexceptions import UnsupportedType
 
+COLOR_WHITE = (255, 255, 255)
+COLOR_RED = (255, 0, 0)
+COLOR_BLUE = (0, 0, 255)
+
 class KeyMode(Enum):
     mode7key = auto()
     others = auto()
@@ -188,7 +192,7 @@ class BMSImage():
             cursor[0] += self.width_offset
             cursor[1] = self.canvas.height - self.height_offset - 1
 
-    def __draw_notes(self):
+    def __draw_notes(self, modify: List[int]=[0, 1, 2, 3, 4, 5, 6]):
         dr = ImageDraw.Draw(self.image)
         cursor = [ self.width_offset, self.canvas.height - self.height_offset - 1 ]
         for line in self.canvas.barlist:
@@ -222,46 +226,39 @@ class BMSImage():
                 note_cursor[0] += self.line_width * 2
                 note_cursor[0] += self.info_width
                 for scratch in b.notes_scratch:
-                    __draw_note(scratch, 0, note_cursor, (255, 0, 0))
+                    __draw_note(scratch, 0, note_cursor, COLOR_RED)
 
-                note_cursor[0] = __move_cursor(note_cursor[0], 0)
-                for one in b.notes_one:
-                    __draw_note(one, 1, note_cursor, (255, 255, 255))
-
-                note_cursor[0] = __move_cursor(note_cursor[0], 1)
-                for two in b.notes_two:
-                    __draw_note(two, 2, note_cursor, (0, 0, 255))
-
-                note_cursor[0] = __move_cursor(note_cursor[0], 2)
-                for three in b.notes_three:
-                    __draw_note(three, 3, note_cursor, (255, 255, 255))
-
-                note_cursor[0] = __move_cursor(note_cursor[0], 3)
-                for four in b.notes_four:
-                    __draw_note(four, 4, note_cursor, (0, 0, 255))
-
-                note_cursor[0] = __move_cursor(note_cursor[0], 4)
-                for five in b.notes_five:
-                    __draw_note(five, 5, note_cursor, (255, 255, 255))
-
-                note_cursor[0] = __move_cursor(note_cursor[0], 5)
-                for six in b.notes_six:
-                    __draw_note(six, 6, note_cursor, (0, 0, 255))
-
-                note_cursor[0] = __move_cursor(note_cursor[0], 6)
-                for seven in b.notes_seven:
-                    __draw_note(seven, 7, note_cursor, (255, 255, 255))
+                color_index = [ COLOR_WHITE, COLOR_BLUE, COLOR_WHITE, COLOR_BLUE, COLOR_WHITE, COLOR_BLUE, COLOR_WHITE ]
+                for i, m in enumerate(modify):
+                    t = None
+                    if m == 0:
+                        t = b.notes_one
+                    elif m == 1:
+                        t = b.notes_two
+                    elif m == 2:
+                        t = b.notes_three
+                    elif m == 3:
+                        t = b.notes_four
+                    elif m == 4:
+                        t = b.notes_five
+                    elif m == 5:
+                        t = b.notes_six
+                    elif m == 6:
+                        t = b.notes_seven
+                    note_cursor[0] = __move_cursor(note_cursor[0], i)
+                    for n in t:
+                        __draw_note(n, i + 1, note_cursor, color_index[i])
 
                 cursor[1] -= bar_height
             cursor[0] += self.__bar_width()
             cursor[0] += self.width_offset
             cursor[1] = self.canvas.height - self.height_offset - 1
 
-    def draw(self):
+    def draw(self, modify: List[int] = [0, 1, 2, 3, 4, 5, 6]):
         self.__calc_info_of_canvas()
         self.image = Image.new("RGB", (self.canvas.width, self.canvas.height), (200, 200,200))
         self.__draw_bar_background()
-        self.__draw_notes()
+        self.__draw_notes(modify)
 
 class BMSDrawer():
     def __init__(self, bms: bms.BMS):
