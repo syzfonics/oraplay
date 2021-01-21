@@ -408,7 +408,7 @@ class BMS():
                 self.genre = l[7:]
                 continue
 
-            if l.startswith("#BPM"):
+            if l.startswith("#BPM "):
                 self.bpm = float(l[5:])
                 continue
 
