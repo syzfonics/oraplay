@@ -8,6 +8,7 @@ import bms
 from oraplayexceptions import UnsupportedType
 
 COLOR_WHITE = (255, 255, 255)
+COLOR_YELLOW = (255, 255, 0)
 COLOR_RED = (255, 0, 0)
 COLOR_BLUE = (0, 0, 255)
 
@@ -196,6 +197,46 @@ class BMSImage():
                     y_end = y_start + self.keysize.get_height()
                     dr.rectangle((x_start, y_start, x_end, y_end), fill=color)
 
+                def __draw_note_ln_layer_start(note: bms.Note, order: int, pos: Tuple[int, int], color: Tuple) -> None:
+                    x_start = pos[0] + 3
+                    x_end = x_start + self.keysize.get_widths()[order] - 1 - 6
+                    y_start = pos[1] + int((1 - note.timing) * bar_height) - self.keysize.get_height() - 1
+                    y_end = y_start + self.keysize.get_height() - 2
+                    dr.rectangle((x_start, y_start, x_end, y_end), fill=color)
+                    pass
+
+                def __draw_note_ln_layer_end(note: bms.Note, order: int, pos: Tuple[int, int], color: Tuple) -> None:
+                    x_start = pos[0] + 3
+                    x_end = x_start + self.keysize.get_widths()[order] - 1 - 6
+                    y_start = pos[1] + int((1 - note.timing) * bar_height) - self.keysize.get_height() + 1
+                    y_end = y_start + self.keysize.get_height() - 2
+                    dr.rectangle((x_start, y_start, x_end, y_end), fill=color)
+                    pass
+
+                def __draw_ln_notes(notes: list[bms.LNBase], order: int, pos: Tuple[int, int], color: Tuple, color_ln: Tuple) -> None:
+                    for note in notes:
+                        if isinstance(note, bms.LNStart):
+                            __draw_note(note, order, pos, color)
+                            __draw_note_ln_layer_start(note, order, pos, color_ln)
+                            continue
+                        if isinstance(note, bms.LNEnd):
+                            __draw_note(note, order, pos, color)
+                            __draw_note_ln_layer_end(note, order, pos, color_ln)
+                            continue
+                        if isinstance(note, bms.LN):
+                            x_start = pos[0] + 3
+                            x_end = x_start + self.keysize.get_widths()[order] - 1 - 6
+                            y_start = pos[1] + int((1 - note.end) * bar_height) - 1
+                            y_end = pos[1] + int((1 - note.start) * bar_height) - self.keysize.get_height() - 1
+                            if note.is_start is True:
+                                y_end -= 1
+                            else:
+                                y_end += self.keysize.get_height()
+                                pass
+                            if note.is_end is True:
+                                y_start -= 1
+                            dr.rectangle((x_start, y_start, x_end, y_end), fill=color_ln)
+
                 def __move_cursor(cr, order):
                     cr += self.keysize.get_widths()[order]
                     cr += self.line_width
@@ -205,12 +246,14 @@ class BMSImage():
                 note_cursor[0] += self.info_width
                 for scratch in b.notes[0]:
                     __draw_note(scratch, 0, note_cursor, COLOR_RED)
+                __draw_ln_notes(b.lnnotes[0], 0, note_cursor, COLOR_RED, COLOR_YELLOW)
 
                 color_index = [ COLOR_WHITE, COLOR_BLUE, COLOR_WHITE, COLOR_BLUE, COLOR_WHITE, COLOR_BLUE, COLOR_WHITE ]
                 for i, m in enumerate(modify):
                     note_cursor[0] = __move_cursor(note_cursor[0], i)
                     for n in b.notes[m + 1]:
                         __draw_note(n, i + 1, note_cursor, color_index[i])
+                    __draw_ln_notes(b.lnnotes[m + 1], i + 1, note_cursor, color_index[i], COLOR_YELLOW)
 
                 cursor[1] -= bar_height
             cursor[0] += self.__bar_width()

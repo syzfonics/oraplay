@@ -88,7 +88,7 @@ class BarInfo():
         self.background    = list() # List[Note]
         self.bpm           = list() # List[BpmNote]
         self.stops         = list() # List[StopNote]
-        self.beat          = Fraction()
+        self.beat          = Fraction(1, 1)
 
     def sort(self):
         sortkey = lambda x: x.timing
@@ -376,10 +376,20 @@ class BMS():
         new_src = [x for i, x in enumerate(src) if b[i] is True]
         src = new_src
 
-    def __merge_item(self, src: List[Union[Note, BpmNote, StopNote, LNEnd]], \
+    def __merge_item_with_ln(self, src: List[Union[Note, BpmNote, StopNote, LNEnd]], \
         dst: List[Union[Note, BpmNote, StopNote]], num, order, dst_ln: List[Union[LNBase]]=None):
         if self.lntype == LNType.LNObj:
             self.__convert_to_ln(src, dst_ln, num, order)
+        for s in src:
+            found = False
+            for d in dst:
+                if d.timing == s.timing:
+                    found = True
+                    break
+            if not found:
+                dst.append(s)
+
+    def __merge_item(self, src: List[Union[Note, BpmNote, StopNote, LNEnd]], dst: List[Union[Note, BpmNote, StopNote]]):
         for s in src:
             found = False
             for d in dst:
@@ -455,42 +465,42 @@ class BMS():
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    self.__merge_item(value, bar.notes[1], bar.number, 1, bar.lnnotes[1])
+                    self.__merge_item_with_ln(value, bar.notes[1], bar.number, 1, bar.lnnotes[1])
                 elif order == '12':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    self.__merge_item(value, bar.notes[2], bar.number, 2, bar.lnnotes[2])
+                    self.__merge_item_with_ln(value, bar.notes[2], bar.number, 2, bar.lnnotes[2])
                 elif order == '13':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    self.__merge_item(value, bar.notes[3], bar.number, 3, bar.lnnotes[3])
+                    self.__merge_item_with_ln(value, bar.notes[3], bar.number, 3, bar.lnnotes[3])
                 elif order == '14':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    self.__merge_item(value, bar.notes[4], bar.number, 4, bar.lnnotes[4])
+                    self.__merge_item_with_ln(value, bar.notes[4], bar.number, 4, bar.lnnotes[4])
                 elif order == '15':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    self.__merge_item(value, bar.notes[5], bar.number, 5, bar.lnnotes[5])
+                    self.__merge_item_with_ln(value, bar.notes[5], bar.number, 5, bar.lnnotes[5])
                 elif order == '16':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    self.__merge_item(value, bar.notes[0], bar.number, 0, bar.lnnotes[0])
+                    self.__merge_item_with_ln(value, bar.notes[0], bar.number, 0, bar.lnnotes[0])
                 elif order == '18':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    self.__merge_item(value, bar.notes[6], bar.number, 6, bar.lnnotes[6])
+                    self.__merge_item_with_ln(value, bar.notes[6], bar.number, 6, bar.lnnotes[6])
                 elif order == '19':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
                         continue
-                    self.__merge_item(value, bar.notes[7], bar.number, 7, bar.lnnotes[7])
+                    self.__merge_item_with_ln(value, bar.notes[7], bar.number, 7, bar.lnnotes[7])
                 elif order == '01':
                     value = self.__parse_note(m.group('value'))
                     if value is None:
