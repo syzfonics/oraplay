@@ -17,12 +17,21 @@ class OraPlayBaseException(Exception):
 
 class UnsupportedType(OraPlayBaseException):
     def __init__(self, message: str, line: int=0):
-        super(OraPlayBaseException, self).__init__(self.__name__, message, line)
+        super(OraPlayBaseException, self).__init__(type(self).__name__, message, line)
+
+    def __str__(self):
+        return super(OraPlayBaseException, self).__str__()
 
 class InvalidFormat(OraPlayBaseException):
     def __init__(self, message: str, line: int=0):
-        super(OraPlayBaseException, self).__init__(self.__name__, message, line)
+        super(OraPlayBaseException, self).__init__(type(self).__name__, message, line)
+
+    def __str__(self):
+        return super(OraPlayBaseException, self).__str__()
 
 class FailedParseReplay(OraPlayBaseException):
     def __init__(self, message: str, line: int=0):
-        super(OraPlayBaseException, self).__init__(self.__name__, message, line)
+        super(OraPlayBaseException, self).__init__(type(self).__name__, message, line)
+
+    def __str__(self):
+        return super(OraPlayBaseException, self).__str__()
