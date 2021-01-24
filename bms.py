@@ -588,6 +588,19 @@ class BMS():
         for b in self.bars:
             b.sort()
 
+        # add blank bar
+        blank_number = list()
+        for i in range(len(self.bars)):
+            try:
+                b = next(filter(lambda x: x.number == i, self.bars))
+            except StopIteration:
+                blank_number.append(i)
+
+        for n in blank_number:
+            new_item = BarInfo()
+            new_item.number = n
+            self.bars.insert(n, new_item)
+
     def output_json(self, path):
         with open(path, mode='wt') as fp:
             json.dump(self, fp, cls=BMS.BMSDataJSONEncoder)
