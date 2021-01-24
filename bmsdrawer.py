@@ -6,6 +6,7 @@ from copy import copy
 
 import bms
 from oraplayexceptions import UnsupportedType
+from typing import Union
 
 COLOR_WHITE = (255, 255, 255)
 COLOR_YELLOW = (255, 255, 0)
@@ -96,9 +97,12 @@ class Canvas():
         self.barlist = barlist
 
 class BMSImage():
-    def __init__(self, bms: bms.BMS, keymode: KeyMode=KeyMode.mode7key, keysize: KeySize=ModeSevenKeySize(),
+    def __init__(self, data: Union[bms.BMS, List[bms.BarInfo]], keymode: KeyMode=KeyMode.mode7key, keysize: KeySize=ModeSevenKeySize(),
         line_width: int=1, bar_height: int=200, canvas_height: int=1000, width_offset: int=20, height_offset: int=50):
-        self.bms = bms
+        if isinstance(data, bms.BMS):
+            self.data = data.bars
+        if isinstance(data, bms.BarInfo):
+            self.data = data
         self.image = None
         self.keymode = keymode
         self.keysize = keysize
@@ -122,7 +126,7 @@ class BMSImage():
         cursor = [ self.width_offset, self.canvas_height - self.height_offset - 1 ]
         oneline_barlist = list()
         barlist = list()
-        for bar in self.bms.bars:
+        for bar in self.data:
             size_of_bar = self.__calc_size_of_bar(bar)
             if (cursor[1] - size_of_bar[1]) < self.height_offset:
                 cursor[0] += size_of_bar[0]
