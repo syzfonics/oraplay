@@ -107,6 +107,9 @@ class NoteDrawer():
     def set_drawer(self, drawer):
         self.drawer = drawer
 
+    def set_height(self, height):
+        self.bar_height = height
+
     def __draw_note_implement(self, note, order, pos):
         x_start = pos[0]
         x_end = x_start + self.key_size.get_widths()[order] - 1
@@ -114,7 +117,7 @@ class NoteDrawer():
         y_end = y_start + self.key_size.get_height()
         self.drawer.rectangle((x_start, y_start, x_end, y_end), fill=self.color[order])
 
-    def draw_note(self, notes, order, pos) -> None:
+    def draw_note(self, notes, order, pos):
         for note in notes:
             self.__draw_note_implement(note, order, pos)
 
@@ -246,6 +249,7 @@ class BMSImage():
         for line in self.canvas.barlist:
             for b in line:
                 bar_height = int(self.bar_height * b.beat)
+                self.style.set_height(bar_height)
                 note_cursor = copy(cursor)
                 note_cursor[1] -= (bar_height - 1)
 
