@@ -102,7 +102,7 @@ class BeatConvertedReplay():
             nonlocal current_start_bar
             nonlocal current_start_beat
 
-            current_ms = result[-1] + 1
+            current_ms = result[-1].end_ms + 1
             current_beat = 0
             current_bpm = b.bpm
             current_start_bar = bar.number
@@ -143,8 +143,8 @@ class BeatConvertedReplay():
                         return i
                 raise FailedParseReplay("timing list is invalid", __LINE__())
 
-            timing = timings[get_timing_index()]
-            beat = Fraction((ms - timing.start_ms) * self.__beat_per_ms() / 4)
+            timing = timings[get_timing_index(ms)]
+            beat = Fraction((ms - timing.start_ms) * self.__beat_per_ms(timing.bpm) / 4)
             result_bar_number = 0
             if number == 0:
                 result_bar_number = timing.start_bar
@@ -154,21 +154,28 @@ class BeatConvertedReplay():
             result_timing = timing.start_beat + beat
 
             counter = 0
-            while True:
-                if result_timing >= bms.bars[result_bar_number].beat:
-                    result_timing -= bms.bars[result_bar_number].beat
-                    result_bar_number += 1
-                    counter += 1
-                    continue
-                break
+            try:
+                while True:
+                    if result_timing >= bms.bars[result_bar_number].beat:
+                        result_timing -= bms.bars[result_bar_number].beat
+                        result_bar_number += 1
+                        counter += 1
+                        continue
+                    break
 
-            return (result_bar_number, result_timing)
+                return (result_bar_number, result_timing)
+            except IndexError:
+                # 既にbmsの定義外に突入していると判定可能
+                return (None, None)
 
         def get_key_index(key):
             # scratch
-            if key["keycode"] == 8:
-                return 0
-            return key["keycode"]
+            try:
+                if key["keycode"] == 8:
+                    return 0
+                return key["keycode"]
+            except KeyError:
+                return None
 
         def is_scratch(value: int) -> bool:
             return value == 8
@@ -186,7 +193,7 @@ class BeatConvertedReplay():
 
         def set_barinfo(bars: List[BarInfo], new_item: BarInfo) -> None:
             try:
-                i = next(filter(lambda x: x[1].number == new_item.number, enumerate(self.bars)))
+                i = next(filter(lambda x: x[1].number == new_item.number, enumerate(bars)))
                 bars[i[0]] = new_item
                 return
             except StopIteration:
@@ -196,6 +203,8 @@ class BeatConvertedReplay():
 
         for key in replay.get_keys():
             key_index = get_key_index(key)
+            if key_index is None:
+                continue
 
             try:
                 if key["pressed"] is True:
@@ -216,7 +225,10 @@ class BeatConvertedReplay():
                 threshold_value = threshold
 
             new_key_bar, new_key_timing = calc_timing(status[key_index].ms, status[key_index].bar)
-            if (key["time"] - status[key_index]) <= threshold_value:
+            if new_key_bar is None:
+                break
+
+            if (key["time"] - status[key_index].ms) <= threshold_value:
                 target_bar = get_barinfo(result, new_key_bar)
                 new_key_input = Note()
                 new_key_input.timing = new_key_timing
@@ -277,7 +289,7 @@ class BeatConvertedReplay():
                         new_key_input_ln.is_end = True
 
                         target_bar = get_barinfo(result, target_bar_number)
-                        start_bar.lnnotes[key_index].extend([ new_key_input_ln, new_key_input_end ])
+                        target_bar.lnnotes[key_index].extend([ new_key_input_ln, new_key_input_end ])
                         set_barinfo(result, target_bar)
                         break
 
@@ -301,4 +313,6 @@ class Replay():
 
     def draw(self, threshold: int=100, threshold_scratch: int=400):
         self.convert.convert(self.bms, self.replay_data, threshold, threshold_scratch)
-        self.image = BMSImage(self.convert.bars).image
+        image = BMSImage(self.convert.bars)
+        image.draw()
+        self.image = image.image

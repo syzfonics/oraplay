@@ -101,7 +101,7 @@ class BMSImage():
         line_width: int=1, bar_height: int=200, canvas_height: int=1000, width_offset: int=20, height_offset: int=50):
         if isinstance(data, bms.BMS):
             self.data = data.bars
-        if isinstance(data, bms.BarInfo):
+        if isinstance(data, list) and len(data) > 0 and isinstance(data[0], bms.BarInfo):
             self.data = data
         self.image = None
         self.keymode = keymode
