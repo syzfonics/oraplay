@@ -131,6 +131,10 @@ class BeatConvertedReplay():
                 self.bar = int()
                 self.pressed = False
 
+        class NoMoreBar(Exception):
+            def __init__(self):
+                pass
+
         result = list() # List[BarInfo]
         timings = self.__calculate_timing(bms)
         status = ( KeyStatus(), KeyStatus(), KeyStatus(), KeyStatus(), KeyStatus(), KeyStatus(), KeyStatus(), KeyStatus() )
@@ -141,7 +145,7 @@ class BeatConvertedReplay():
                 for i, t in enumerate(timings):
                     if t.start_ms <= ms and ms <= t.end_ms:
                         return i
-                raise FailedParseReplay("timing list is invalid", __LINE__())
+                raise NoMoreBar()
 
             timing = timings[get_timing_index(ms)]
             beat = Fraction((ms - timing.start_ms) * self.__beat_per_ms(timing.bpm) / 4)
@@ -154,28 +158,28 @@ class BeatConvertedReplay():
             result_timing = timing.start_beat + beat
 
             counter = 0
-            try:
-                while True:
-                    if result_timing >= bms.bars[result_bar_number].beat:
-                        result_timing -= bms.bars[result_bar_number].beat
-                        result_bar_number += 1
-                        counter += 1
-                        continue
-                    break
+            while True:
+                try:
+                    beat_temp = bms.bars[result_bar_number].beat
+                except IndexError:
+                    beat_temp = 1
+                if result_timing >= beat_temp:
+                    result_timing -= beat_temp
+                    result_bar_number += 1
+                    counter += 1
+                    continue
+                break
 
-                return (result_bar_number, result_timing)
-            except IndexError:
-                # 既にbmsの定義外に突入していると判定可能
-                return (None, None)
+            return (result_bar_number, result_timing)
 
         def get_key_index(key):
             # scratch
             try:
-                if key["keycode"] == 8:
+                if key["keycode"] == 7:
                     return 0
-                return key["keycode"]
+                return key["keycode"] + 1
             except KeyError:
-                return None
+                return 1
 
         def is_scratch(value: int) -> bool:
             return value == 8
@@ -210,7 +214,10 @@ class BeatConvertedReplay():
                 if key["pressed"] is True:
                     if status[key_index].pressed is True:
                         raise FailedParseReplay("duplication of press. ms={}, key_index={}".format(key["time"], key_index), __LINE__())
-                    status[key_index].bar, _ = calc_timing(key["time"], status[key_index].bar)
+                    try:
+                        status[key_index].bar, _ = calc_timing(key["time"], status[key_index].bar)
+                    except NoMoreBar:
+                        break
                     status[key_index].pressed = True
                     status[key_index].ms = key["time"]
                     continue
@@ -224,8 +231,9 @@ class BeatConvertedReplay():
             else:
                 threshold_value = threshold
 
-            new_key_bar, new_key_timing = calc_timing(status[key_index].ms, status[key_index].bar)
-            if new_key_bar is None:
+            try:
+                new_key_bar, new_key_timing = calc_timing(status[key_index].ms, status[key_index].bar)
+            except NoMoreBar:
                 break
 
             if (key["time"] - status[key_index].ms) <= threshold_value:
@@ -240,7 +248,10 @@ class BeatConvertedReplay():
                 status[key_index].ms = key["time"]
             else:
                 # LN
-                new_key_bar_end, new_key_timing_end = calc_timing(key["time"], status[key_index].bar)
+                try:
+                    new_key_bar_end, new_key_timing_end = calc_timing(key["time"], status[key_index].bar)
+                except NoMoreBar:
+                    break
                 new_key_input_start = LNStart()
                 new_key_input_start.timing = new_key_timing
                 new_key_input_end = LNEnd()
