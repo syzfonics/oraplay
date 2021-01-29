@@ -139,7 +139,7 @@ class BeatConvertedReplay():
         timings = self.__calculate_timing(bms)
         status = ( KeyStatus(), KeyStatus(), KeyStatus(), KeyStatus(), KeyStatus(), KeyStatus(), KeyStatus(), KeyStatus() )
 
-        def calc_timing(ms: int, number: int) -> Tuple[int, int]:
+        def calc_timing(ms: int) -> Tuple[int, int]:
 
             def get_timing_index(ms: int) -> int:
                 for i, t in enumerate(timings):
@@ -149,11 +149,6 @@ class BeatConvertedReplay():
 
             timing = timings[get_timing_index(ms)]
             beat = Fraction((ms - timing.start_ms) * self.__beat_per_ms(timing.bpm) / 4)
-            result_bar_number = 0
-            if number == 0:
-                result_bar_number = timing.start_bar
-            else:
-                result_bar_number = number
             result_bar_number = timing.start_bar
             result_timing = timing.start_beat + beat
 
@@ -214,10 +209,7 @@ class BeatConvertedReplay():
                 if key["pressed"] is True:
                     if status[key_index].pressed is True:
                         raise FailedParseReplay("duplication of press. ms={}, key_index={}".format(key["time"], key_index), __LINE__())
-                    try:
-                        status[key_index].bar, _ = calc_timing(key["time"], status[key_index].bar)
-                    except NoMoreBar:
-                        break
+                    status[key_index].bar, _ = calc_timing(key["time"])
                     status[key_index].pressed = True
                     status[key_index].ms = key["time"]
                     continue
@@ -231,10 +223,7 @@ class BeatConvertedReplay():
             else:
                 threshold_value = threshold
 
-            try:
-                new_key_bar, new_key_timing = calc_timing(status[key_index].ms, status[key_index].bar)
-            except NoMoreBar:
-                break
+            new_key_bar, new_key_timing = calc_timing(status[key_index].ms)
 
             if (key["time"] - status[key_index].ms) <= threshold_value:
                 target_bar = get_barinfo(result, new_key_bar)
@@ -243,15 +232,13 @@ class BeatConvertedReplay():
                 target_bar.notes[key_index].append(new_key_input)
                 set_barinfo(result, target_bar)
 
-                status[key_index].bar = target_bar
+                status[key_index].bar = new_key_bar
                 status[key_index].pressed = False
                 status[key_index].ms = key["time"]
             else:
                 # LN
-                try:
-                    new_key_bar_end, new_key_timing_end = calc_timing(key["time"], status[key_index].bar)
-                except NoMoreBar:
-                    break
+                new_key_bar_end, new_key_timing_end = calc_timing(key["time"])
+
                 new_key_input_start = LNStart()
                 new_key_input_start.timing = new_key_timing
                 new_key_input_end = LNEnd()
@@ -278,8 +265,8 @@ class BeatConvertedReplay():
                     set_barinfo(result, start_bar)
 
                     target_bar_number = new_key_bar + 1
-                    while target_bar_number <= new_key_bar:
-                        if target_bar_number != new_key_bar:
+                    while target_bar_number <= new_key_bar_end:
+                        if target_bar_number != new_key_bar_end:
                             new_key_input_ln = LN()
                             new_key_input_ln.start = 0
                             new_key_input_ln.end = 1
