@@ -181,20 +181,20 @@ class BMSImage():
         else:
             self.style = NoteDrawer(bar_height, keysize)
 
-    def __bar_width(self) -> int:
+    def _bar_width(self) -> int:
         return sum(self.keysize.get_widths()) + self.info_width + self.line_width * 10
 
-    def __calc_size_of_bar(self, bar: bms.BarInfo) -> Tuple:
-        width = self.__bar_width()
+    def _calc_size_of_bar(self, bar: bms.BarInfo) -> Tuple:
+        width = self._bar_width()
         height = int(self.bar_height * bar.beat)
         return (width, height)
 
-    def __calc_info_of_canvas(self) -> None:
+    def _calc_info_of_canvas(self) -> None:
         cursor = [ self.width_offset, self.canvas_height - self.height_offset - 1 ]
         oneline_barlist = list()
         barlist = list()
         for bar in self.data:
-            size_of_bar = self.__calc_size_of_bar(bar)
+            size_of_bar = self._calc_size_of_bar(bar)
             if (cursor[1] - size_of_bar[1]) < self.height_offset:
                 cursor[0] += size_of_bar[0]
                 cursor[0] += self.width_offset
@@ -203,17 +203,17 @@ class BMSImage():
                 barlist = list()
             cursor[1] -= size_of_bar[1]
             barlist.append(bar)
-        cursor[0] += self.__bar_width()
+        cursor[0] += self._bar_width()
         cursor[0] += self.width_offset
         oneline_barlist.append(barlist)
         self.canvas = Canvas(cursor[0], self.canvas_height, oneline_barlist)
 
-    def __draw_bar_background(self):
+    def _draw_bar_background(self):
         dr = ImageDraw.Draw(self.image)
         cursor = [ self.width_offset, self.canvas.height - self.height_offset - 1 ]
         for line in self.canvas.barlist:
             for b in line:
-                bar_width = self.__bar_width()
+                bar_width = self._bar_width()
                 bar_height = int(self.bar_height * b.beat)
 
                 # 黒の描画
@@ -238,11 +238,11 @@ class BMSImage():
                     fill=(128, 128, 128), width=self.line_width)
                 dr.line((cursor[0], cursor[1], cursor[0] + bar_width - 1, cursor[1]), fill=(128, 128, 128), width=self.line_width)
                 cursor[1] -= bar_height
-            cursor[0] += self.__bar_width()
+            cursor[0] += self._bar_width()
             cursor[0] += self.width_offset
             cursor[1] = self.canvas.height - self.height_offset - 1
 
-    def __draw_notes(self, modify: List[int]=[0, 1, 2, 3, 4, 5, 6]):
+    def _draw_notes(self, modify: List[int]=[0, 1, 2, 3, 4, 5, 6]):
         dr = ImageDraw.Draw(self.image)
         self.style.set_drawer(dr)
         cursor = [ self.width_offset, self.canvas.height - self.height_offset - 1 ]
@@ -257,7 +257,7 @@ class BMSImage():
 
                 for bpm in b.bpm:
                     y_bpm = note_cursor[1] + int((1 - bpm.timing) * bar_height) - 1
-                    dr.line((note_cursor[0], y_bpm, note_cursor[0] + self.__bar_width() - 2 * self.line_width - 1, y_bpm), \
+                    dr.line((note_cursor[0], y_bpm, note_cursor[0] + self._bar_width() - 2 * self.line_width - 1, y_bpm), \
                         fill=(0, 255, 0), width=self.line_width*2)
                     dr.text((note_cursor[0] + 2, y_bpm - 11), text=str(bpm.bpm), anchor='rs', fill=(0, 255, 0))
 
@@ -277,15 +277,15 @@ class BMSImage():
                     self.style.draw_lnnote(b.lnnotes[m + 1], i + 1, note_cursor)
 
                 cursor[1] -= bar_height
-            cursor[0] += self.__bar_width()
+            cursor[0] += self._bar_width()
             cursor[0] += self.width_offset
             cursor[1] = self.canvas.height - self.height_offset - 1
 
     def draw(self, modify: List[int] = [0, 1, 2, 3, 4, 5, 6]):
-        self.__calc_info_of_canvas()
+        self._calc_info_of_canvas()
         self.image = Image.new("RGB", (self.canvas.width, self.canvas.height), (200, 200,200))
-        self.__draw_bar_background()
-        self.__draw_notes(modify)
+        self._draw_bar_background()
+        self._draw_notes(modify)
 
 class BMSDrawer():
     def __init__(self, bms: bms.BMS):
