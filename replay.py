@@ -329,28 +329,20 @@ class ReplayNoteDrawer():
     def __draw_note_ln_layer_start(self, note, order, pos):
         x_start = pos[0]
         x_end = x_start + self.key_size.get_widths()[order] - 1
-        y_start = pos[1] + int((1 - note.timing) * self.bar_height) - self.key_size.get_height() - 1
-        y_end = y_start + self.key_size.get_height()
-        self.drawer.line((x_start, y_start, x_start, y_end, x_end, y_end, x_end, y_start), fill=self.color, width=2)
+        y = pos[1] + int((1 - note.timing) * self.bar_height) - 1
+        self.drawer.line((x_start, y, x_end, y), fill=self.color, width=2)
 
     def __draw_note_ln_layer_end(self, note, order, pos):
         x_start = pos[0]
         x_end = x_start + self.key_size.get_widths()[order] - 1
-        y_start = pos[1] + int((1 - note.timing) * self.bar_height) - self.key_size.get_height() + 1
-        y_end = y_start + self.key_size.get_height()
-        self.drawer.line((x_start, y_end, x_start, y_start, x_end, y_start, x_end, y_end), fill=self.color, width=2)
+        y = pos[1] + int((1 - note.timing) * self.bar_height) - self.key_size.get_height() - 1
+        self.drawer.line((x_start, y, x_end, y), fill=self.color, width=2)
 
     def __draw_note_ln_layer(self, note, order, pos):
         x_start = pos[0]
-        x_end = x_start + self.key_size.get_widths()[order] - 1
-        y_start = pos[1] + int((1 - note.end) * self.bar_height) - 1
-        y_end = pos[1] + int((1 - note.start) * self.bar_height) - self.key_size.get_height() - 1
-        if note.is_start is True:
-            y_end -= 1
-        else:
-            y_end += self.key_size.get_height()
-        if note.is_end is True:
-            y_start -= 1
+        x_end = x_start + self.key_size.get_widths()[order] - 1 - 1 # -1 because of width
+        y_start = pos[1] + int((1 - note.end) * self.bar_height) - self.key_size.get_height() - 1
+        y_end = pos[1] + int((1 - note.start) * self.bar_height) - 1
         self.drawer.line((x_start, y_start, x_start, y_end), fill=self.color, width=2)
         self.drawer.line((x_end, y_start, x_end, y_end), fill=self.color, width=2)
 
