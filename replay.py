@@ -7,6 +7,7 @@ from fractions import Fraction
 from oraplayexceptions import OraPlayBaseException, FailedParseReplay, __LINE__
 from oradb import SongDB
 from bms import BMS, BarInfo, Note, BpmNote, LNStart, LN, LNEnd
+from common import *
 from bmsdrawer import *
 
 COLOR_PURPLE = (255, 0, 255)
@@ -74,12 +75,6 @@ class BeatConvertedReplay():
         self.bars = list() # List[BarInfo]
         self.modify = list() # List[int]
 
-    def __ms_per_beat(self, bpm: int):
-        return Fraction(60000 / bpm)
-
-    def __beat_per_ms(self, bpm: int):
-        return Fraction(bpm / 60000)
-
     def __calculate_timing(self, bms: BMS) -> List[TimeDefinition]:
         result = list()
         current_ms = 0
@@ -92,7 +87,7 @@ class BeatConvertedReplay():
             new_def = TimeDefinition()
             new_def.start_beat = current_start_beat
             new_def.start_ms = current_ms
-            new_def.end_ms = current_ms + (current_beat * 4 * self.__ms_per_beat(current_bpm)) - 1
+            new_def.end_ms = current_ms + (current_beat * 4 * ms_per_beat(current_bpm)) - 1
             new_def.start_bar = current_start_bar
             new_def.bpm = current_bpm
             return new_def
@@ -150,7 +145,7 @@ class BeatConvertedReplay():
                 raise NoMoreBar()
 
             timing = timings[get_timing_index(ms)]
-            beat = Fraction((ms - timing.start_ms) * self.__beat_per_ms(timing.bpm) / 4)
+            beat = Fraction((ms - timing.start_ms) * beat_per_ms(timing.bpm) / 4)
             result_bar_number = timing.start_bar
             result_timing = timing.start_beat + beat
 
