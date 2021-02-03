@@ -54,13 +54,6 @@ class ReplayData():
         if self.option == RandomType.Others:
             raise OraPlayBaseException("this option is not supported", __LINE__())
 
-class TimeBar():
-    def __init__(self):
-        self.bpm = float()
-        self.beats = Fraction()
-        self.start_ms = int()
-        self.end_ms = int()
-
 class TimeDefinition():
     def __init__(self):
         self.start_bar = int()
