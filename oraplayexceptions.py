@@ -15,6 +15,13 @@ class OraPlayBaseException(Exception):
     def __str__(self):
         return "{} : {} : L.{}".format(self.name, self.message, self.line)
 
+class ArgumentError(OraPlayBaseException):
+    def __init__(self, message: str, line: int=0):
+        super(OraPlayBaseException, self).__init__(type(self).__name__, message, line)
+
+    def __str__(self):
+        return super(OraPlayBaseException, self).__str__()
+
 class UnsupportedType(OraPlayBaseException):
     def __init__(self, message: str, line: int=0):
         super(OraPlayBaseException, self).__init__(type(self).__name__, message, line)
