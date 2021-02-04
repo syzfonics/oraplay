@@ -437,7 +437,7 @@ class BMS():
             if m is not None:
                 new_exbpm = ExBPMDef()
                 new_exbpm.order = int(m.group('order'), 36)
-                new_exbpm.bpm = m.group('value')
+                new_exbpm.bpm = float(m.group('value'))
                 self.exbpm.append(new_exbpm)
                 continue
 
