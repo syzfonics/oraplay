@@ -1,6 +1,8 @@
 import sqlite3
 from enum import Enum, auto
 
+from oraplayexceptions import ArgumentError, __LINE__
+
 class HashType(Enum):
     md5 = auto()
     sha256 = auto()
@@ -14,6 +16,8 @@ class SongDB():
             hash_str = "sha256"
         elif hash_type == HashType.md5:
             hash_str = "md5"
+        else:
+            raise ArgumentError("hash type is invalid", __LINE__())
         c = self.db.execute("SELECT path FROM song WHERE {}='{}'".format(hash_str, hash))
         data = c.fetchone()
         return data[0]
