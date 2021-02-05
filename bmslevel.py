@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
+from math import sqrt
 
 from common import *
 from bms import *
@@ -100,8 +101,8 @@ class CalcDensity(CalcBase):
         key_influence = float(0)
         for inputs in key_input_intervals:
             for i in inputs:
-                key_influence += (float(250) / i)
-        key_influence /= total_notes
+                key_influence += (float(200) / i) ** 2
+        key_influence /= sqrt(total_notes)
         return key_influence
 
 class BMSLevelCalculator():
