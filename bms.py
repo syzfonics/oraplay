@@ -7,7 +7,8 @@ from enum import Enum, auto
 
 from oraplayexceptions import InvalidFormat, __LINE__
 
-re_bar = re.compile(r"^#(?P<number>[0-9]{3})(?P<order>[0-9]{2}):(?P<value>(([0-9A-Z]{2})+)|([0-9]+(\.[0-9]+)??))")
+re_barbpm = re.compile(r"^#(?P<number>[0-9]{3})02:(?P<value>.+)")
+re_bar = re.compile(r"^#(?P<number>[0-9]{3})(?P<order>[0-9]{2}):(?P<value>([0-9A-Z]{2})+)")
 re_wav = re.compile(r"^#WAV(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
 re_bpm = re.compile(r"^#BPM(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
 re_stop = re.compile(r"^#STOP(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
@@ -456,6 +457,13 @@ class BMS():
                 new_stop.value = int(m.group('value'))
                 continue
 
+            m = re_barbpm.match(l)
+            if m is not None:
+                bar = self.__get_barinfo(int(m.group('number')))
+                bar.beat = Fraction(float(m.group('value')))
+                print(bar.beat)
+                continue
+
             m = re_bar.match(l)
             if m is not None:
                 bar = self.__get_barinfo(int(m.group('number')))
@@ -521,9 +529,6 @@ class BMS():
                     if value is None:
                         continue
                     self.__merge_item(value, bar.stops)
-                elif order == '02':
-                    # beat
-                    bar.beat = Fraction(float(m.group('value')))
 
                 # LNTYPE 1
                 elif order == '51':
