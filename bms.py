@@ -7,7 +7,7 @@ from enum import Enum, auto
 
 from oraplayexceptions import InvalidFormat, __LINE__
 
-re_bar = re.compile(r"^#(?P<number>[0-9]{3})(?P<order>[0-9]{2}):(?P<value>(([0-9A-Z]{2})+)|([0-9]+\.[0-9]+))")
+re_bar = re.compile(r"^#(?P<number>[0-9]{3})(?P<order>[0-9]{2}):(?P<value>(([0-9A-Z]{2})+)|([0-9]+(\.[0-9]+)??))")
 re_wav = re.compile(r"^#WAV(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
 re_bpm = re.compile(r"^#BPM(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
 re_stop = re.compile(r"^#STOP(?P<order>[0-9A-Z]{2}) (?P<value>.+)")
