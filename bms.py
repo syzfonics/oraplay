@@ -461,7 +461,6 @@ class BMS():
             if m is not None:
                 bar = self.__get_barinfo(int(m.group('number')))
                 bar.beat = Fraction(float(m.group('value')))
-                print(bar.beat)
                 continue
 
             m = re_bar.match(l)
