@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from math import sqrt
+from collections import Counter
 
 from common import *
 from bms import *
@@ -33,27 +34,70 @@ class InputTimeline:
         current_ms = 0
         current_bpm = bms.bpm
         for b in bms.bars:
+
+            def set_all_notes(notes, lnnotes, stops):
+                result = deepcopy(notes)
+                result.extend([x for x in lnnotes if isinstance(x, LNStart) is True])
+                if len(result) == 0:
+                    return None
+                result.sort(key=lambda x: x.timing)
+                if len(stops) == 0:
+                    return result
+
+                stop_process = deepcopy(result)
+                for stop in stops:
+                    for i, n in enumerate(result):
+                        if stop.timing < n.timing:
+                            stop_process[i].timing += Fraction(stop.duration, 192)
+
+                result = stop_process
+                return result
+
             if len(b.bpm) == 0:
                 for i in range(8):
-                    notes = deepcopy(b.notes[i])
-                    notes.extend([x for x in b.lnnotes[i] if isinstance(x, LNStart) is True])
-                    if len(notes) == 0:
+                    notes = set_all_notes(b.notes[i], b.lnnotes[i], b.stops)
+                    if notes is None:
                         continue
-                    notes.sort(key=lambda x: x.timing)
+
                     for n in notes:
                         ms = current_ms + ms_per_beat(current_bpm) * (b.beat * n.timing) * 4
                         self.key_ms[i].append(ms)
-                current_ms += ms_per_beat(current_bpm) * b.beat * 4
+
+                stop_beats = 0
+                for stop in b.stops:
+                    stop_beats += Fraction(stop.duration, 192)
+                current_ms += ms_per_beat(current_bpm) * (b.beat + stop_beats) * 4
+
+                c = Counter(self.key_ms[i])
+                dup = [x for x in c.most_common() if x[1] > 1]
+                assert len(dup) == 0, 'duplicates note?, {}, {}, {}'.format(b.number, i, b.beat)
                 continue
 
+            def set_bpm_notes():
+                bpms = deepcopy(b.bpm)
+                last_bpm = BpmNote()
+                last_bpm.timing = 1
+                last_bpm.bpm = bpms[-1].bpm
+                bpms.append(last_bpm)
+                if len(b.stops) == 0:
+                    return bpms
+                stop_process = deepcopy(bpms)
+                for stop in b.stops:
+                    for i, bpm in enumerate(bpms):
+                        if stop.timing < bpm.timing:
+                            stop_process[i].timing += Fraction(stop.duration, 192)
+
+                bpms = stop_process
+                return bpms
+
             current_beat = 0
-            for change_bpm in b.bpm:
+            bpms = set_bpm_notes()
+
+            for change_bpm in bpms:
                 for i in range(8):
-                    notes = deepcopy(b.notes[i])
-                    notes.extend([x for x in b.lnnotes[i] if isinstance(x, LNStart) is True])
-                    if len(notes) == 0:
+                    notes = set_all_notes(b.notes[i], b.lnnotes[i], b.stops)
+                    if notes is None:
                         continue
-                    notes.sort(key=lambda x: x.timing)
                     target_notes = [x for x in notes if current_beat <= x.timing and x.timing < change_bpm.timing]
 
                     for n in target_notes:
@@ -63,20 +107,6 @@ class InputTimeline:
                 current_ms += ms_per_beat(current_bpm) * b.beat * (change_bpm.timing - current_beat) * 4
                 current_beat = change_bpm.timing
                 current_bpm = change_bpm.bpm
-
-            for i in range(8):
-                notes = deepcopy(b.notes[i])
-                notes.extend([x for x in b.lnnotes[i] if isinstance(x, LNStart) is True])
-                if len(notes) == 0:
-                    continue
-                notes.sort(key=lambda x: x.timing)
-
-                target_notes = [x for x in notes if current_beat <= x.timing]
-                for n in target_notes:
-                    ms = current_ms + ms_per_beat(current_bpm) * b.beat * (n.timing - current_beat) * 4
-                    self.key_ms[i].append(ms)
-
-                current_ms += ms_per_beat(current_bpm) * b.beat * (1 - current_beat) * 4
 
     def get_lane_timeline(self, index: int):
         return self.key_ms[index]
