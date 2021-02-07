@@ -89,19 +89,51 @@ class CalcDensity(CalcBase):
     def calc(self):
         total_notes = 0
         key_input_intervals = ( list(), list(), list(), list(), list(), list(), list(), list() )
-        for i in range(8):
-            key_input_timings = self.timeline.get_lane_timeline(i)
-            total_notes += len(key_input_timings)
-            start = 0
-            for input in key_input_timings:
-                if start != 0:
-                    key_input_intervals[i].append(input - start)
-                start = input
+
+        def process_for_scratch():
+            key_input_timings = self.timeline.get_lane_timeline(0)
+            start_up = 0
+            start_down = 0
+            for i, input in enumerate(key_input_timings):
+                if (i % 2) == 0:
+                    if start_up != 0:
+                        assert input != start_up, 'input == start_up, ({}, {})'.format(float(input), float(start_up))
+                        key_input_intervals[0].append(input - start_up)
+                    else:
+                        key_input_intervals[0].append(None)
+                    start_up = input
+                else:
+                    if start_down != 0:
+                        assert input != start_down, 'input == start_down, ({} {})'.format(float(input), float(start_down))
+                        key_input_intervals[0].append(input - start_down)
+                    else:
+                        key_input_intervals[0].append(None)
+                    start_down = input
+
+        def process():
+            nonlocal total_notes
+            for i in range(1, 8):
+                key_input_timings = self.timeline.get_lane_timeline(i)
+                total_notes += len(key_input_timings)
+                start = 0
+                for input in key_input_timings:
+                    if start != 0:
+                        assert input != start, 'input == start, ({}, {})'.format(float(input), float(start))
+                        key_input_intervals[i].append(input - start)
+                    else:
+                        key_input_intervals[i].append(None)
+                    start = input
+
+        process_for_scratch()
+        process()
 
         key_influence = float(0)
         for inputs in key_input_intervals:
             for i in inputs:
-                key_influence += (float(200) / i) ** 2
+                if i is None:
+                    key_influence += 1
+                else:
+                    key_influence += (float(200) / i) ** 2
         key_influence /= sqrt(total_notes)
         return key_influence
 
