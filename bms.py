@@ -430,7 +430,7 @@ class BMS():
 
             # LNOBJ
             if l.startswith("#LNOBJ"):
-                self.lnobj.append(LNObj(int(l[7:])))
+                self.lnobj.append(LNObj(int(l[7:], 36)))
                 self.lntype = LNType.LNObj
                 continue
 
@@ -455,6 +455,7 @@ class BMS():
                 new_stop = StopDef()
                 new_stop.order = int(m.group('order'), 36)
                 new_stop.value = int(m.group('value'))
+                self.stop.append(new_stop)
                 continue
 
             m = re_barbpm.match(l)
