@@ -1,6 +1,7 @@
 import sqlite3
 from enum import Enum, auto
 
+from bms import BMS
 from oraplayexceptions import ArgumentError, __LINE__
 
 class HashType(Enum):
@@ -21,3 +22,7 @@ class SongDB():
         c = self.db.execute("SELECT path FROM song WHERE {}='{}'".format(hash_str, hash))
         data = c.fetchone()
         return data[0]
+
+    def get_bms_from_hash(self, hash: str, hash_type: HashType=HashType.sha256):
+        file_path = self.get_file_path(hash, hash_type)
+        return BMS(file_path)
