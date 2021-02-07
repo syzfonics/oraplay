@@ -211,6 +211,7 @@ class BMS():
             if s == '00':
                 continue
             define = int(s, 36)
+            is_ln = False
             if self.lntype == LNType.LNObj:
                 for l in self.lnobj:
                     if l.define == define:
@@ -218,8 +219,8 @@ class BMS():
                         new_ln.defwav = define
                         new_ln.timing = Fraction(i, length)
                         result.append(new_ln)
-                        break
-            else:
+                        is_ln = True
+            if is_ln is False:
                 new_note = Note()
                 new_note.defwav = define
                 new_note.timing = Fraction(i, length)
@@ -358,18 +359,18 @@ class BMS():
                         target_lane = target_lane[:-1]
                         break
                 else:
-                    assert isinstance(src, Note) is True
                     ln_start = LNStart()
-                    ln_start.timing = src[i].timing
-                    ln_start.defwav = src[i].defwav
+                    ln_start.timing = src[i-1].timing
+                    ln_start.defwav = src[i-1].defwav
                     ln_mid = LN()
                     ln_mid.is_start = True
-                    ln_mid.start = src[i].timing
+                    ln_mid.start = src[i-1].timing
                     ln_mid.is_start = True
                     ln_mid.end = s.timing
-                    dst.appned(ln_start)
+                    dst.append(ln_start)
                     dst.append(ln_mid)
                     dst.append(s)
+                    b[i-1] = False
             else:
                 b.append(True)
 
@@ -379,8 +380,6 @@ class BMS():
 
     def __merge_item_with_ln(self, src: List[Union[Note, BpmNote, StopNote, LNEnd]], \
         dst: List[Union[Note, BpmNote, StopNote]], num, order, dst_ln: List[Union[LNBase]]=None):
-        if self.lntype == LNType.LNObj:
-            self.__convert_to_ln(src, dst_ln, num, order)
         for s in src:
             found = False
             for d in dst:
@@ -389,6 +388,8 @@ class BMS():
                     break
             if not found:
                 dst.append(s)
+        if self.lntype == LNType.LNObj:
+            self.__convert_to_ln(dst, dst_ln, num, order)
 
     def __merge_item(self, src: List[Union[Note, BpmNote, StopNote, LNEnd]], dst: List[Union[Note, BpmNote, StopNote]]):
         for s in src:
@@ -462,6 +463,7 @@ class BMS():
             if m is not None:
                 bar = self.__get_barinfo(int(m.group('number')))
                 bar.beat = Fraction(float(m.group('value')))
+                self.__set_barinfo(bar)
                 continue
 
             m = re_bar.match(l)
