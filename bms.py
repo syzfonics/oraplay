@@ -34,35 +34,38 @@ class StopDef():
         self.value = int()
 
 class Note():
-    def __init__(self):
-        self.timing = Fraction()
-        self.defwav = int()
+    def __init__(self, timing=Fraction(), defwav=int()):
+        self.timing = timing
+        self.defwav = defwav
+
+    def __str__(self):
+        return 'Note timing:{}, defwav:{}'.format(self.timing, self.defwav)
 
 class LNBase():
     pass
 
 class LNStart(LNBase):
-    def __init__(self):
-        self.timing = Fraction()
-        self.defwav = int()
+    def __init__(self, timing=Fraction(), defwav=int()):
+        self.timing = timing
+        self.defwav = defwav
 
     def __str__(self):
-        return 'LNBase timing:{}, defwav:{}'.format(self.timing, self.defwav)
+        return 'LNStart timing:{}, defwav:{}'.format(self.timing, self.defwav)
 
 class LNEnd(LNBase):
-    def __init__(self):
-        self.timing = Fraction()
-        self.defwav = int()
+    def __init__(self, timing=Fraction(), defwav=int()):
+        self.timing = timing
+        self.defwav = defwav
 
     def __str__(self):
         return 'LNEnd timing:{}, defwav:{}'.format(self.timing, self.defwav)
 
 class LN(LNBase):
-    def __init__(self):
-        self.is_start = False
-        self.is_end = False
-        self.start = Fraction()
-        self.end = Fraction()
+    def __init__(self, is_start=False, is_end=False, start=Fraction(), end=Fraction()):
+        self.is_start = is_start
+        self.is_end = is_end
+        self.start = start
+        self.end = end
 
     def __str__(self):
         return 'LN start:{}({}), end:{}({})'.format(self.start, self.is_start, self.end, self.is_end)
@@ -338,45 +341,29 @@ class BMS():
                         before = self.__get_barinfo(num - j - 1)
                         target_lane = before.notes[order]
                         if len(target_lane) == 0:
-                            ln_mid = LN()
-                            ln_mid.is_start = False
-                            ln_mid.start = 0
-                            ln_mid.is_end = False
-                            ln_mid.end = 1
+                            ln_mid = LN(False, False, 0, 1)
                             before.lnnotes[order].append(ln_mid)
                             continue
                         target_note = target_lane[-1]
-                        ln_start = LNStart()
-                        ln_start.timing = target_note.timing
-                        ln_start.defwav = target_note.defwav
-                        ln_mid = LN()
-                        ln_mid.is_start = True
-                        ln_mid.start = target_note.timing
-                        ln_mid.is_end = False
-                        ln_mid.end = 1
-                        before.lnnotes[order].append(ln_start)
-                        before.lnnotes[order].append(ln_mid)
+                        ln_start = LNStart(target_note.timing, target_note.defwav)
+                        ln_mid = LN(True, False, target_note.timing, 1)
+                        before.lnnotes[order].extend([ ln_start, ln_mid ])
                         target_lane = target_lane[:-1]
+                        before.notes[order].clear()
+                        before.notes[order].extend(target_lane)
                         break
                 else:
-                    ln_start = LNStart()
-                    ln_start.timing = src[i-1].timing
-                    ln_start.defwav = src[i-1].defwav
-                    ln_mid = LN()
-                    ln_mid.is_start = True
-                    ln_mid.start = src[i-1].timing
-                    ln_mid.is_start = True
-                    ln_mid.end = s.timing
-                    dst.append(ln_start)
-                    dst.append(ln_mid)
-                    dst.append(s)
+                    ln_start = LNStart(src[i-1].timing, src[i-1].defwav)
+                    ln_mid = LN(True, True, src[i-1].timing, s.timing)
+                    dst.extend([ ln_start, ln_mid, s ])
                     b[i-1] = False
             else:
                 b.append(True)
 
         assert len(src) == len(b)
         new_src = [x for i, x in enumerate(src) if b[i] is True]
-        src = new_src
+        src.clear()
+        src.extend(new_src)
 
     def __merge_item_with_ln(self, src: List[Union[Note, BpmNote, StopNote, LNEnd]], \
         dst: List[Union[Note, BpmNote, StopNote]], num, order, dst_ln: List[Union[LNBase]]=None):
